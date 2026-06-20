@@ -1,6 +1,4 @@
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Caching.Memory;
-using Shluz.Hubs;
 using Shluz.Models;
 using Shluz.Repositories;
 using System.Diagnostics;
@@ -112,12 +110,11 @@ public sealed class GrpcClientInvoker(IMemoryCache cache)
     }
 }
 
-public sealed class ExecutionEngine(GrpcClientInvoker invoker, IHubContext<GatewayEventsHub> hub)
+public sealed class ExecutionEngine(GrpcClientInvoker invoker)
 {
     public async Task<List<GrpcResponse>> ExecuteAsync(ExecutionPlan plan, CancellationToken cancellationToken)
     {
         plan.Status = "Running";
-        await hub.Clients.Group("gateway-observers").SendAsync("planStarted", new { plan.PlanId, plan.Status, Steps = plan.Steps.Count }, cancellationToken);
         var responses = new List<GrpcResponse>();
         var orderedSteps = plan.Steps.OrderBy(step => step.Order).ToArray();
         for (var index = 0; index < orderedSteps.Length;)
@@ -129,7 +126,6 @@ public sealed class ExecutionEngine(GrpcClientInvoker invoker, IHubContext<Gatew
             index += batch.Length;
         }
         plan.Status = "Completed";
-        await hub.Clients.Group("gateway-observers").SendAsync("planCompleted", new { plan.PlanId, plan.Status, Responses = responses.Count }, cancellationToken);
         return responses;
     }
 
@@ -139,7 +135,6 @@ public sealed class ExecutionEngine(GrpcClientInvoker invoker, IHubContext<Gatew
         var call = new GrpcCall { StartedAt = DateTime.UtcNow, Status = "Running", Method = step.Method, TargetService = step.Service, GraphQLPath = step.Field.Path, RequestPayload = step.Field.Arguments };
         var response = await invoker.InvokeAsync(call, cancellationToken);
         call.FinishedAt = DateTime.UtcNow; call.Status = response.Status; call.Response = response; step.Status = response.Status;
-        await hub.Clients.Group("gateway-observers").SendAsync("stepCompleted", new { step.StepId, step.Name, step.Order, step.Status, Path = step.Field.Path }, cancellationToken);
         return response;
     }
 }

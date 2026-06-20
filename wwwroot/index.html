@@ -13,9 +13,8 @@
   <header class="hero">
     <div>
       <h1>Шлюз оркестрации микросервисов gRPC + GraphQL</h1>
-      <p>Демонстрационный дашборд показывает GraphQL-запросы, построенные планы, gRPC-вызовы, ошибки и события выполнения через SignalR.</p>
+      <p>Демонстрационный дашборд показывает GraphQL-запросы, построенные планы, gRPC-вызовы и ошибки без realtime-подписок.</p>
     </div>
-    <div class="status" id="connectionStatus">SignalR: подключение...</div>
   </header>
 
   <section class="stats" aria-label="Статистика шлюза">
@@ -43,7 +42,7 @@
       <pre id="result">Ожидание запроса...</pre>
     </section>
     <section class="card timeline">
-      <h2>SignalR события</h2>
+      <h2>Журнал запросов</h2>
       <div id="events" class="events"></div>
     </section>
     <section class="card">
@@ -58,7 +57,6 @@
     </section>
   </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.7/dist/browser/signalr.min.js"></script>
 <script>
 const result = document.getElementById('result');
 const events = document.getElementById('events');
@@ -93,16 +91,20 @@ async function sendQuery(){
   state.responses += 1;
   state.totalLatency += payload.extensions?.elapsedMs ?? performance.now() - started;
   state.errors += payload.errors?.length ? 1 : 0;
+  updateServiceCounters(payload);
+  addEvent('graphqlResponse', { request: state.requests, elapsedMs: payload.extensions?.elapsedMs, errors: payload.errors?.length ?? 0 });
   result.textContent = JSON.stringify(payload, null, 2);
   renderStats();
 }
-const connection = new signalR.HubConnectionBuilder().withUrl('/gateway-events').withAutomaticReconnect().build();
-connection.onreconnecting(() => document.getElementById('connectionStatus').textContent = 'SignalR: переподключение...');
-connection.onreconnected(() => document.getElementById('connectionStatus').textContent = 'SignalR: онлайн');
-connection.onclose(() => document.getElementById('connectionStatus').textContent = 'SignalR: отключен');
-['planStarted','planCompleted'].forEach(eventName => connection.on(eventName, payload => addEvent(eventName, payload)));
-connection.on('stepCompleted', payload => { state.steps += 1; if (payload.name?.startsWith('UserService')) state.services.UserService += 1; if (payload.name?.startsWith('OrderService')) state.services.OrderService += 1; renderStats(); addEvent('stepCompleted', payload); });
-connection.start().then(() => { document.getElementById('connectionStatus').textContent = 'SignalR: онлайн'; return connection.invoke('SubscribeToGateway'); });
+function updateServiceCounters(payload){
+  const data = Array.isArray(payload.data) ? payload.data : [];
+  for (const item of data) {
+    const payloadText = JSON.stringify(item ?? '');
+    if (payloadText.includes('UserService')) state.services.UserService += 1;
+    if (payloadText.includes('OrderService')) state.services.OrderService += 1;
+  }
+  state.steps += data.length;
+}
 loadStats();
 </script>
 </body>
