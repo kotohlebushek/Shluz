@@ -13,9 +13,8 @@
   <header class="hero">
     <div>
       <h1>Шлюз оркестрации микросервисов gRPC + GraphQL</h1>
-      <p>Демонстрационный дашборд показывает GraphQL-запросы, построенные планы, gRPC-вызовы, ошибки и события выполнения через SignalR.</p>
+      <p>Демонстрационный дашборд показывает GraphQL-запросы, построенные планы, gRPC-вызовы и ошибки без realtime-подписок.</p>
     </div>
-    <div class="status" id="connectionStatus">SignalR: подключение...</div>
   </header>
 
   <section class="stats" aria-label="Статистика шлюза">
@@ -43,7 +42,7 @@
       <pre id="result">Ожидание запроса...</pre>
     </section>
     <section class="card timeline">
-      <h2>SignalR события</h2>
+      <h2>Журнал запросов</h2>
       <div id="events" class="events"></div>
     </section>
     <section class="card">
@@ -58,10 +57,10 @@
     </section>
   </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.7/dist/browser/signalr.min.js"></script>
 <script>
 const result = document.getElementById('result');
 const events = document.getElementById('events');
+const queryInput = document.getElementById('query');
 const state = { requests: 0, steps: 0, totalLatency: 0, responses: 0, mappings: 0, errors: 0, services: { UserService: 0, OrderService: 0 } };
 function renderStats(){
   document.getElementById('requestCount').textContent = state.requests;
@@ -87,22 +86,43 @@ async function loadStats(){
 }
 async function sendQuery(){
   const started = performance.now();
-  const response = await fetch('/graphql',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:document.getElementById('query').value})});
-  const payload = await response.json();
+  const response = await fetch('/graphql',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:queryInput.value})});
+  const elapsedMs = Math.round(performance.now() - started);
+  const text = await response.text();
+  let payload;
+  try {
+    payload = text ? JSON.parse(text) : { errors: [{ message: 'Пустой ответ шлюза' }] };
+  } catch {
+    payload = { errors: [{ message: text || `HTTP ${response.status}` }] };
+  }
   state.requests += 1;
   state.responses += 1;
-  state.totalLatency += payload.extensions?.elapsedMs ?? performance.now() - started;
-  state.errors += payload.errors?.length ? 1 : 0;
-  result.textContent = JSON.stringify(payload, null, 2);
+  state.totalLatency += payload.extensions?.elapsedMs ?? elapsedMs;
+  state.errors += !response.ok || payload.errors?.length ? 1 : 0;
+  if (response.ok) updateServiceCounters(payload);
+  addEvent(response.ok ? 'graphqlResponse' : 'graphqlError', { request: state.requests, status: response.status, elapsedMs: payload.extensions?.elapsedMs ?? elapsedMs, errors: payload.errors?.length ?? 0 });
+  result.textContent = formatGatewayPayload(payload, response.status);
   renderStats();
 }
-const connection = new signalR.HubConnectionBuilder().withUrl('/gateway-events').withAutomaticReconnect().build();
-connection.onreconnecting(() => document.getElementById('connectionStatus').textContent = 'SignalR: переподключение...');
-connection.onreconnected(() => document.getElementById('connectionStatus').textContent = 'SignalR: онлайн');
-connection.onclose(() => document.getElementById('connectionStatus').textContent = 'SignalR: отключен');
-['planStarted','planCompleted'].forEach(eventName => connection.on(eventName, payload => addEvent(eventName, payload)));
-connection.on('stepCompleted', payload => { state.steps += 1; if (payload.name?.startsWith('UserService')) state.services.UserService += 1; if (payload.name?.startsWith('OrderService')) state.services.OrderService += 1; renderStats(); addEvent('stepCompleted', payload); });
-connection.start().then(() => { document.getElementById('connectionStatus').textContent = 'SignalR: онлайн'; return connection.invoke('SubscribeToGateway'); });
+function formatGatewayPayload(payload, status){
+  if (!payload.errors?.length) return JSON.stringify(payload, null, 2);
+  const errors = payload.errors.map(error => ({
+    code: error.code ?? `HTTP_${status}`,
+    message: String(error.message ?? error.title ?? 'Ошибка шлюза').slice(0, 220),
+    source: error.source,
+    path: error.path
+  }));
+  return JSON.stringify({ errors, extensions: payload.extensions }, null, 2);
+}
+function updateServiceCounters(payload){
+  const data = Array.isArray(payload.data) ? payload.data : [];
+  for (const item of data) {
+    const payloadText = JSON.stringify(item ?? '');
+    if (payloadText.includes('UserService')) state.services.UserService += 1;
+    if (payloadText.includes('OrderService')) state.services.OrderService += 1;
+  }
+  state.steps += data.length;
+}
 loadStats();
 </script>
 </body>

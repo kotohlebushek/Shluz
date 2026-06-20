@@ -1,11 +1,9 @@
-using Shluz.Hubs;
 using Shluz.Models;
 using Shluz.Repositories;
 using Shluz.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddSignalR();
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton(InMemoryGatewayConfigurationFactory.CreateDefault());
 builder.Services.AddSingleton<IRepository<GraphQLRequest, Guid>, InMemoryRepository<GraphQLRequest, Guid>>();
@@ -23,7 +21,6 @@ builder.Services.AddSingleton<GatewayOrchestrator>();
 var app = builder.Build();
 app.UseDefaultFiles();
 app.UseStaticFiles();
-app.MapHub<GatewayEventsHub>("/gateway-events");
 
 app.MapGet("/api/configuration", (GatewayConfiguration configuration) => Results.Ok(configuration));
 app.MapGet("/api/mappings", (MappingRegistry registry) => Results.Ok(registry.Mappings));
