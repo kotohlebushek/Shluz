@@ -1,0 +1,26 @@
+"""
+Демонстрационная GraphQL-схема шлюза. Она описывает внешний контракт,
+который клиент видит поверх внутренних gRPC-сервисов.
+"""
+schema {
+  query: Query
+}
+
+type Query {
+  "Получить пользователя через UserService.GetUser"
+  user(id: ID!): User
+}
+
+type User {
+  id: ID!
+  name: String
+  email: String
+  "Заказы пользователя через OrderService.GetOrdersByUser"
+  orders: [Order!]!
+}
+
+type Order {
+  id: ID!
+  total: Float!
+  status: String!
+}

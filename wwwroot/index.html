@@ -34,8 +34,8 @@
       <div id="events" class="events"></div>
     </section>
     <section class="card">
-      <h2>Компоненты реализации</h2>
-      <span class="pill">GraphQLParser</span><span class="pill">ComplexityAnalyzer</span><span class="pill">MappingRegistry</span><span class="pill">ExecutionPlanner</span><span class="pill">ExecutionEngine</span><span class="pill">GrpcClientInvoker</span><span class="pill">ResponseAggregator</span>
+      <h2>GraphQL-схема и компоненты реализации</h2>
+      <a class="pill" href="/graphql/schema" target="_blank">schema.graphql</a><span class="pill">GraphQLParser</span><span class="pill">ComplexityAnalyzer</span><span class="pill">MappingRegistry</span><span class="pill">ExecutionPlanner</span><span class="pill">ExecutionEngine</span><span class="pill">GrpcClientInvoker</span><span class="pill">ResponseAggregator</span>
     </section>
   </div>
 </div>
@@ -45,7 +45,7 @@ const result = document.getElementById('result');
 const events = document.getElementById('events');
 function addEvent(name, payload){ events.insertAdjacentHTML('afterbegin', `<pre><b>${name}</b>\n${JSON.stringify(payload,null,2)}</pre>`); }
 async function sendQuery(){
-  const response = await fetch('/api/graphql',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:document.getElementById('query').value})});
+  const response = await fetch('/graphql',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:document.getElementById('query').value})});
   result.textContent = JSON.stringify(await response.json(), null, 2);
 }
 const connection = new signalR.HubConnectionBuilder().withUrl('/gateway-events').withAutomaticReconnect().build();

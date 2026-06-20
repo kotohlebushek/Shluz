@@ -28,7 +28,13 @@ app.MapHub<GatewayEventsHub>("/gateway-events");
 app.MapGet("/api/configuration", (GatewayConfiguration configuration) => Results.Ok(configuration));
 app.MapGet("/api/mappings", (MappingRegistry registry) => Results.Ok(registry.Mappings));
 app.MapGet("/api/requests", (IRepository<GraphQLRequest, Guid> repository) => Results.Ok(repository.All));
-app.MapPost("/api/graphql", async (GraphQLRequestDto dto, GatewayOrchestrator orchestrator, CancellationToken cancellationToken) =>
+app.MapGet("/graphql/schema", async (IWebHostEnvironment environment) =>
+{
+    var schemaPath = Path.Combine(environment.ContentRootPath, "GraphQL", "schema.graphql");
+    return Results.Text(await File.ReadAllTextAsync(schemaPath), "text/plain; charset=utf-8");
+});
+
+static async Task<IResult> ExecuteGraphQLAsync(GraphQLRequestDto dto, GatewayOrchestrator orchestrator, CancellationToken cancellationToken)
 {
     var request = new GraphQLRequest
     {
@@ -39,7 +45,10 @@ app.MapPost("/api/graphql", async (GraphQLRequestDto dto, GatewayOrchestrator or
 
     var response = await orchestrator.HandleAsync(request, cancellationToken);
     return Results.Ok(response);
-});
+}
+
+app.MapPost("/graphql", ExecuteGraphQLAsync);
+app.MapPost("/api/graphql", ExecuteGraphQLAsync);
 
 app.Run();
 
