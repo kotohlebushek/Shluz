@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Shluz Gateway</title>
+  <style>
+    body{font-family:Inter,Arial,sans-serif;margin:0;background:#0f172a;color:#e2e8f0}.wrap{max-width:1180px;margin:auto;padding:32px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.card{background:#111827;border:1px solid #334155;border-radius:18px;padding:20px;box-shadow:0 20px 60px #0005}textarea{width:100%;height:260px;background:#020617;color:#dbeafe;border:1px solid #475569;border-radius:12px;padding:14px}button{background:#38bdf8;color:#082f49;border:0;border-radius:12px;padding:12px 18px;font-weight:700;cursor:pointer}pre{white-space:pre-wrap;background:#020617;border-radius:12px;padding:14px;min-height:260px}.pill{display:inline-block;background:#1e293b;border:1px solid #475569;border-radius:999px;padding:8px 12px;margin:4px}.events{max-height:360px;overflow:auto}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Шлюз оркестрации микросервисов gRPC + GraphQL</h1>
+  <p>Интерфейс демонстрирует разбор GraphQL-запроса, построение плана, имитацию gRPC-вызовов и события выполнения через SignalR.</p>
+  <div class="grid">
+    <section class="card">
+      <h2>GraphQL-запрос</h2>
+      <textarea id="query">query GetUser {
+  user(id: 42) {
+    name
+    orders {
+      total
+    }
+  }
+}</textarea><br><br>
+      <button onclick="sendQuery()">Выполнить через шлюз</button>
+    </section>
+    <section class="card">
+      <h2>Ответ шлюза</h2>
+      <pre id="result">Ожидание запроса...</pre>
+    </section>
+    <section class="card">
+      <h2>SignalR события</h2>
+      <div id="events" class="events"></div>
+    </section>
+    <section class="card">
+      <h2>Компоненты реализации</h2>
+      <span class="pill">GraphQLParser</span><span class="pill">ComplexityAnalyzer</span><span class="pill">MappingRegistry</span><span class="pill">ExecutionPlanner</span><span class="pill">ExecutionEngine</span><span class="pill">GrpcClientInvoker</span><span class="pill">ResponseAggregator</span>
+    </section>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.7/dist/browser/signalr.min.js"></script>
+<script>
+const result = document.getElementById('result');
+const events = document.getElementById('events');
+function addEvent(name, payload){ events.insertAdjacentHTML('afterbegin', `<pre><b>${name}</b>\n${JSON.stringify(payload,null,2)}</pre>`); }
+async function sendQuery(){
+  const response = await fetch('/api/graphql',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:document.getElementById('query').value})});
+  result.textContent = JSON.stringify(await response.json(), null, 2);
+}
+const connection = new signalR.HubConnectionBuilder().withUrl('/gateway-events').withAutomaticReconnect().build();
+['planStarted','stepCompleted','planCompleted'].forEach(eventName => connection.on(eventName, payload => addEvent(eventName, payload)));
+connection.start().then(() => connection.invoke('SubscribeToGateway'));
+</script>
+</body>
+</html>
