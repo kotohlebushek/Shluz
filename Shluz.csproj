@@ -4,9 +4,4 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="GraphQLParser" Version="8.1.0" />
-    <PackageReference Include="Grpc.Net.Client" Version="2.65.0" />
-    <PackageReference Include="Google.Protobuf" Version="3.27.2" />
-  </ItemGroup>
 </Project>
