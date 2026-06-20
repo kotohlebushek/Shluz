@@ -1,4 +1,5 @@
 using Shluz.Models;
+using GatewayServiceDescriptor = Shluz.Models.ServiceDescriptor;
 
 namespace Shluz.Services;
 
@@ -6,8 +7,8 @@ public static class InMemoryGatewayConfigurationFactory
 {
     public static GatewayConfiguration CreateDefault()
     {
-        var userService = new ServiceDescriptor { ServiceName = "UserService", Address = "https://localhost:7101", TimeoutMs = 2500 };
-        var orderService = new ServiceDescriptor { ServiceName = "OrderService", Address = "https://localhost:7102", TimeoutMs = 3000 };
+        var userService = new GatewayServiceDescriptor { ServiceName = "UserService", Address = "https://localhost:7101", TimeoutMs = 2500 };
+        var orderService = new GatewayServiceDescriptor { ServiceName = "OrderService", Address = "https://localhost:7102", TimeoutMs = 3000 };
         var getUser = new GrpcMethodDescriptor { MethodName = "GetUser", RequestType = "GetUserRequest", ResponseType = "UserReply" };
         var getOrders = new GrpcMethodDescriptor { MethodName = "GetOrdersByUser", RequestType = "OrdersByUserRequest", ResponseType = "OrdersReply" };
         userService.Methods.Add(getUser);

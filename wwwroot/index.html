@@ -5,13 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Shluz Gateway</title>
   <style>
-    body{font-family:Inter,Arial,sans-serif;margin:0;background:#0f172a;color:#e2e8f0}.wrap{max-width:1180px;margin:auto;padding:32px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.card{background:#111827;border:1px solid #334155;border-radius:18px;padding:20px;box-shadow:0 20px 60px #0005}textarea{width:100%;height:260px;background:#020617;color:#dbeafe;border:1px solid #475569;border-radius:12px;padding:14px}button{background:#38bdf8;color:#082f49;border:0;border-radius:12px;padding:12px 18px;font-weight:700;cursor:pointer}pre{white-space:pre-wrap;background:#020617;border-radius:12px;padding:14px;min-height:260px}.pill{display:inline-block;background:#1e293b;border:1px solid #475569;border-radius:999px;padding:8px 12px;margin:4px}.events{max-height:360px;overflow:auto}
+    :root{color-scheme:dark;--bg:#08111f;--panel:#111827cc;--line:#334155;--text:#e2e8f0;--muted:#94a3b8;--cyan:#38bdf8;--violet:#a78bfa;--green:#34d399;--amber:#fbbf24;--rose:#fb7185}*{box-sizing:border-box}body{font-family:Inter,Segoe UI,Arial,sans-serif;margin:0;min-height:100vh;background:radial-gradient(circle at 15% 10%,#1e3a8a88,transparent 32%),radial-gradient(circle at 85% 5%,#7c3aed66,transparent 30%),linear-gradient(135deg,#020617,#0f172a 45%,#111827);color:var(--text)}.wrap{max-width:1240px;margin:auto;padding:32px}.hero{display:flex;justify-content:space-between;gap:24px;align-items:flex-end;margin-bottom:24px}.hero h1{font-size:clamp(28px,4vw,52px);line-height:1.02;margin:0 0 12px}.hero p{color:var(--muted);max-width:780px;margin:0}.status{background:#022c22;border:1px solid #10b98166;color:#bbf7d0;border-radius:999px;padding:10px 14px;white-space:nowrap}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:22px 0}.stat{position:relative;overflow:hidden;background:linear-gradient(145deg,#111827dd,#0f172acc);border:1px solid #334155;border-radius:22px;padding:20px;box-shadow:0 20px 70px #0007}.stat:after{content:"";position:absolute;inset:auto -30px -35px auto;width:110px;height:110px;background:var(--accent);filter:blur(34px);opacity:.42}.stat span{color:var(--muted);font-size:13px}.stat strong{display:block;font-size:34px;margin-top:8px}.stat small{color:#cbd5e1}.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.card{background:var(--panel);backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:0 20px 60px #0005}textarea{width:100%;height:260px;background:#020617;color:#dbeafe;border:1px solid #475569;border-radius:14px;padding:14px;outline:none}button{background:linear-gradient(135deg,var(--cyan),#818cf8);color:#061221;border:0;border-radius:14px;padding:13px 18px;font-weight:800;cursor:pointer;box-shadow:0 12px 40px #38bdf844}pre{white-space:pre-wrap;background:#020617;border:1px solid #1e293b;border-radius:14px;padding:14px;min-height:260px}.pill{display:inline-block;color:#e0f2fe;text-decoration:none;background:#1e293b;border:1px solid #475569;border-radius:999px;padding:8px 12px;margin:4px}.events{max-height:360px;overflow:auto}.timeline pre{min-height:auto;margin:0 0 10px;border-left:4px solid var(--cyan)}.chart{display:grid;gap:14px}.bar{display:grid;grid-template-columns:120px 1fr 44px;gap:10px;align-items:center}.track{height:14px;background:#020617;border:1px solid #1e293b;border-radius:999px;overflow:hidden}.fill{height:100%;width:0%;background:linear-gradient(90deg,var(--cyan),var(--violet));border-radius:999px;transition:width .35s}.donut{width:170px;height:170px;border-radius:50%;margin:10px auto;background:conic-gradient(var(--green) 0deg,var(--green) 0deg,#1e293b 0deg 360deg);display:grid;place-items:center;box-shadow:inset 0 0 0 22px #020617}.donut strong{font-size:34px}.legend{display:flex;justify-content:center;gap:12px;color:var(--muted);font-size:13px}.dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px}@media(max-width:900px){.hero,.grid{display:block}.stats{grid-template-columns:1fr 1fr}.card{margin-bottom:18px}}@media(max-width:560px){.stats{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>Шлюз оркестрации микросервисов gRPC + GraphQL</h1>
-  <p>Интерфейс демонстрирует разбор GraphQL-запроса, построение плана, имитацию gRPC-вызовов и события выполнения через SignalR.</p>
+  <header class="hero">
+    <div>
+      <h1>Шлюз оркестрации микросервисов gRPC + GraphQL</h1>
+      <p>Демонстрационный дашборд показывает GraphQL-запросы, построенные планы, gRPC-вызовы, ошибки и события выполнения через SignalR.</p>
+    </div>
+    <div class="status" id="connectionStatus">SignalR: подключение...</div>
+  </header>
+
+  <section class="stats" aria-label="Статистика шлюза">
+    <article class="stat" style="--accent:#38bdf8"><span>GraphQL-запросов</span><strong id="requestCount">0</strong><small>в текущем запуске</small></article>
+    <article class="stat" style="--accent:#a78bfa"><span>gRPC-шагов</span><strong id="stepCount">0</strong><small>выполнено планировщиком</small></article>
+    <article class="stat" style="--accent:#34d399"><span>Среднее время</span><strong id="avgLatency">0мс</strong><small>по ответам шлюза</small></article>
+    <article class="stat" style="--accent:#fbbf24"><span>Маппингов</span><strong id="mappingCount">0</strong><small>GraphQL → gRPC</small></article>
+  </section>
+
   <div class="grid">
     <section class="card">
       <h2>GraphQL-запрос</h2>
@@ -29,13 +42,19 @@
       <h2>Ответ шлюза</h2>
       <pre id="result">Ожидание запроса...</pre>
     </section>
-    <section class="card">
+    <section class="card timeline">
       <h2>SignalR события</h2>
       <div id="events" class="events"></div>
     </section>
     <section class="card">
-      <h2>Компоненты реализации</h2>
-      <span class="pill">GraphQLParser</span><span class="pill">ComplexityAnalyzer</span><span class="pill">MappingRegistry</span><span class="pill">ExecutionPlanner</span><span class="pill">ExecutionEngine</span><span class="pill">GrpcClientInvoker</span><span class="pill">ResponseAggregator</span>
+      <h2>Графики выполнения</h2>
+      <div class="chart" aria-label="График нагрузки по сервисам">
+        <div class="bar"><span>UserService</span><div class="track"><div class="fill" id="userServiceBar"></div></div><b id="userServiceCount">0</b></div>
+        <div class="bar"><span>OrderService</span><div class="track"><div class="fill" id="orderServiceBar"></div></div><b id="orderServiceCount">0</b></div>
+      </div>
+      <h3>Успешность ответов</h3>
+      <div class="donut" id="successDonut"><strong id="successRate">100%</strong></div>
+      <div class="legend"><span><i class="dot" style="background:var(--green)"></i>успешно</span><span><i class="dot" style="background:#1e293b"></i>ошибки</span></div>
     </section>
   </div>
 </div>
@@ -43,14 +62,48 @@
 <script>
 const result = document.getElementById('result');
 const events = document.getElementById('events');
+const state = { requests: 0, steps: 0, totalLatency: 0, responses: 0, mappings: 0, errors: 0, services: { UserService: 0, OrderService: 0 } };
+function renderStats(){
+  document.getElementById('requestCount').textContent = state.requests;
+  document.getElementById('stepCount').textContent = state.steps;
+  document.getElementById('avgLatency').textContent = `${state.responses ? Math.round(state.totalLatency / state.responses) : 0}мс`;
+  document.getElementById('mappingCount').textContent = state.mappings;
+  const maxServiceCalls = Math.max(1, state.services.UserService, state.services.OrderService);
+  document.getElementById('userServiceCount').textContent = state.services.UserService;
+  document.getElementById('orderServiceCount').textContent = state.services.OrderService;
+  document.getElementById('userServiceBar').style.width = `${Math.round(state.services.UserService / maxServiceCalls * 100)}%`;
+  document.getElementById('orderServiceBar').style.width = `${Math.round(state.services.OrderService / maxServiceCalls * 100)}%`;
+  const successRate = state.responses ? Math.max(0, Math.round((state.responses - state.errors) / state.responses * 100)) : 100;
+  document.getElementById('successRate').textContent = `${successRate}%`;
+  document.getElementById('successDonut').style.background = `conic-gradient(var(--green) 0deg ${successRate * 3.6}deg,#1e293b ${successRate * 3.6}deg 360deg)`;
+}
 function addEvent(name, payload){ events.insertAdjacentHTML('afterbegin', `<pre><b>${name}</b>\n${JSON.stringify(payload,null,2)}</pre>`); }
+async function loadStats(){
+  const mappings = await fetch('/api/mappings').then(r => r.json()).catch(() => []);
+  const requests = await fetch('/api/requests').then(r => r.json()).catch(() => []);
+  state.mappings = mappings.length || 0;
+  state.requests = requests.length || state.requests;
+  renderStats();
+}
 async function sendQuery(){
-  const response = await fetch('/api/graphql',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:document.getElementById('query').value})});
-  result.textContent = JSON.stringify(await response.json(), null, 2);
+  const started = performance.now();
+  const response = await fetch('/graphql',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:document.getElementById('query').value})});
+  const payload = await response.json();
+  state.requests += 1;
+  state.responses += 1;
+  state.totalLatency += payload.extensions?.elapsedMs ?? performance.now() - started;
+  state.errors += payload.errors?.length ? 1 : 0;
+  result.textContent = JSON.stringify(payload, null, 2);
+  renderStats();
 }
 const connection = new signalR.HubConnectionBuilder().withUrl('/gateway-events').withAutomaticReconnect().build();
-['planStarted','stepCompleted','planCompleted'].forEach(eventName => connection.on(eventName, payload => addEvent(eventName, payload)));
-connection.start().then(() => connection.invoke('SubscribeToGateway'));
+connection.onreconnecting(() => document.getElementById('connectionStatus').textContent = 'SignalR: переподключение...');
+connection.onreconnected(() => document.getElementById('connectionStatus').textContent = 'SignalR: онлайн');
+connection.onclose(() => document.getElementById('connectionStatus').textContent = 'SignalR: отключен');
+['planStarted','planCompleted'].forEach(eventName => connection.on(eventName, payload => addEvent(eventName, payload)));
+connection.on('stepCompleted', payload => { state.steps += 1; if (payload.name?.startsWith('UserService')) state.services.UserService += 1; if (payload.name?.startsWith('OrderService')) state.services.OrderService += 1; renderStats(); addEvent('stepCompleted', payload); });
+connection.start().then(() => { document.getElementById('connectionStatus').textContent = 'SignalR: онлайн'; return connection.invoke('SubscribeToGateway'); });
+loadStats();
 </script>
 </body>
 </html>
