@@ -36,13 +36,6 @@
   }
 }</textarea><br><br>
       <button onclick="sendQuery()">Выполнить через шлюз</button>
-      <h3>Примеры запросов</h3>
-      <a class="pill" href="#" onclick="applyExample(0);return false;">1. UserService: успешно</a>
-      <a class="pill" href="#" onclick="applyExample(1);return false;">2. User + Order: успешно</a>
-      <a class="pill" href="#" onclick="applyExample(2);return false;">3. OrderService: успешно</a>
-      <a class="pill" href="#" onclick="applyExample(3);return false;">4. UserService: ошибка</a>
-      <a class="pill" href="#" onclick="applyExample(4);return false;">5. Глубина: ошибка</a>
-      <pre id="exampleText">Выберите пример выше, чтобы подставить запрос.</pre>
     </section>
     <section class="card">
       <h2>Ответ шлюза</h2>
@@ -68,57 +61,6 @@
 const result = document.getElementById('result');
 const events = document.getElementById('events');
 const queryInput = document.getElementById('query');
-const exampleTitles = [
-  '1. UserService: успешно',
-  '2. UserService + OrderService: успешно',
-  '3. OrderService: успешно',
-  '4. UserService: неудачный — нет блока выборки',
-  '5. Gateway: неудачный — превышена глубина'
-];
-const examples = [
-  `query UserServiceGetUser {
-  user(id: 42) {
-    id
-    name
-    email
-  }
-}`,
-  `query UserWithOrders {
-  user(id: 42) {
-    id
-    name
-    orders {
-      id
-      status
-      total
-    }
-  }
-}`,
-  `query OrderServiceTotals {
-  user(id: 7) {
-    orders {
-      id
-      total
-    }
-  }
-}`,
-  `query BrokenUserService`,
-  `query TooDeepForGateway {
-  user(id: 42) {
-    orders {
-      user {
-        orders {
-          user {
-            orders {
-              total
-            }
-          }
-        }
-      }
-    }
-  }
-}`
-];
 const state = { requests: 0, steps: 0, totalLatency: 0, responses: 0, mappings: 0, errors: 0, services: { UserService: 0, OrderService: 0 } };
 function renderStats(){
   document.getElementById('requestCount').textContent = state.requests;
@@ -172,11 +114,6 @@ function formatGatewayPayload(payload, status){
   }));
   return JSON.stringify({ errors, extensions: payload.extensions }, null, 2);
 }
-function applyExample(index){
-  queryInput.value = examples[index];
-  document.getElementById('exampleText').textContent = `${exampleTitles[index]}\n\n${examples[index]}`;
-  result.textContent = 'Пример загружен. Нажмите «Выполнить через шлюз».';
-}
 function updateServiceCounters(payload){
   const data = Array.isArray(payload.data) ? payload.data : [];
   for (const item of data) {
@@ -186,7 +123,6 @@ function updateServiceCounters(payload){
   }
   state.steps += data.length;
 }
-document.getElementById('exampleText').textContent = examples.map((query, index) => `${exampleTitles[index]}\n${query}`).join('\n\n---\n\n');
 loadStats();
 </script>
 </body>
