@@ -4,8 +4,8 @@
     "Shluz": {
       "commandName": "Project",
       "dotnetRunMessages": true,
-      "launchBrowser": true,
-      "applicationUrl": "https://localhost:7245;http://localhost:5245",
+      "launchBrowser": false,
+      "applicationUrl": "http://127.0.0.1:15080",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
