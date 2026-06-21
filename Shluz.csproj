@@ -5,6 +5,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="HotChocolate.AspNetCore" Version="15.1.4" />
+  </ItemGroup>
+  <ItemGroup>
     <Content Include="GraphQL\schema.graphql">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

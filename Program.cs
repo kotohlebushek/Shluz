@@ -17,6 +17,9 @@ builder.Services.AddSingleton<GrpcClientInvoker>();
 builder.Services.AddSingleton<ExecutionEngine>();
 builder.Services.AddSingleton<ResponseAggregator>();
 builder.Services.AddSingleton<GatewayOrchestrator>();
+builder.Services
+    .AddGraphQLServer()
+    .AddQueryType<HotChocolateGatewayQuery>();
 
 var app = builder.Build();
 app.UseDefaultFiles();
@@ -46,6 +49,7 @@ static async Task<IResult> ExecuteGraphQLAsync(GraphQLRequestDto dto, GatewayOrc
 
 app.MapPost("/graphql", ExecuteGraphQLAsync);
 app.MapPost("/api/graphql", ExecuteGraphQLAsync);
+app.MapGraphQL("/hotchocolate");
 
 app.Run();
 
