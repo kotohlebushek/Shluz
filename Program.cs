@@ -30,7 +30,7 @@ app.MapGet("/api/mappings", (MappingRegistry registry) => Results.Ok(registry.Ma
 app.MapGet("/api/requests", (IRepository<GraphQLRequest, Guid> repository) => Results.Ok(repository.All));
 app.MapGet("/graphql/schema", async (IWebHostEnvironment environment) =>
 {
-    var schemaPath = Path.Combine(environment.ContentRootPath, "GraphQL", "schema.graphql");
+    var schemaPath = System.IO.Path.Combine(environment.ContentRootPath, "GraphQL", "schema.graphql");
     return Results.Text(await File.ReadAllTextAsync(schemaPath), "text/plain; charset=utf-8");
 });
 

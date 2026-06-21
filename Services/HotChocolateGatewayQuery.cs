@@ -37,7 +37,7 @@ public sealed class HotChocolateGatewayQuery
                 .SetMessage(error.Message)
                 .SetCode(error.Code)
                 .SetExtension("source", error.Source)
-                .SetPath(global::HotChocolate.Path.Parse(error.Path))
+                .SetExtension("path", error.Path)
                 .Build()));
         }
 
