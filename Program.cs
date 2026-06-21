@@ -17,6 +17,9 @@ builder.Services.AddSingleton<GrpcClientInvoker>();
 builder.Services.AddSingleton<ExecutionEngine>();
 builder.Services.AddSingleton<ResponseAggregator>();
 builder.Services.AddSingleton<GatewayOrchestrator>();
+builder.Services
+    .AddGraphQLServer()
+    .AddQueryType<HotChocolateGatewayQuery>();
 
 var app = builder.Build();
 app.UseDefaultFiles();
@@ -27,7 +30,7 @@ app.MapGet("/api/mappings", (MappingRegistry registry) => Results.Ok(registry.Ma
 app.MapGet("/api/requests", (IRepository<GraphQLRequest, Guid> repository) => Results.Ok(repository.All));
 app.MapGet("/graphql/schema", async (IWebHostEnvironment environment) =>
 {
-    var schemaPath = Path.Combine(environment.ContentRootPath, "GraphQL", "schema.graphql");
+    var schemaPath = System.IO.Path.Combine(environment.ContentRootPath, "GraphQL", "schema.graphql");
     return Results.Text(await File.ReadAllTextAsync(schemaPath), "text/plain; charset=utf-8");
 });
 
@@ -46,6 +49,7 @@ static async Task<IResult> ExecuteGraphQLAsync(GraphQLRequestDto dto, GatewayOrc
 
 app.MapPost("/graphql", ExecuteGraphQLAsync);
 app.MapPost("/api/graphql", ExecuteGraphQLAsync);
+app.MapGraphQL("/hotchocolate");
 
 app.Run();
 
